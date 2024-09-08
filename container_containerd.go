@@ -1,8 +1,11 @@
+// go:build unix
+
 package container
 
 import (
 	"context"
 	"fmt"
+	"net"
 	"os"
 	"strings"
 
@@ -10,6 +13,7 @@ import (
 	"github.com/containerd/containerd/defaults"
 	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/namespaces"
+	"github.com/vishvananda/netlink"
 )
 
 type ContainerdContainer struct {
@@ -216,4 +220,12 @@ func (cc *ContainerdContainer) getRootFS() (string, error) {
 	defer task.Delete(ctx)
 
 	return fmt.Sprintf("/run/containerd/io.containerd.runtime.v2.task/k8s.io/%s/rootfs", cc.ID), nil
+}
+
+func (dc *ContainerdContainer) GetInterfaces() ([]net.Interface, []netlink.Link, error) {
+	return nil, nil, fmt.Errorf("unimplemented")
+}
+
+func (dc *ContainerdContainer) GetInterfacesNodeMapping() (map[string]string, error) {
+	return nil, fmt.Errorf("unimplemented")
 }

@@ -2,7 +2,10 @@ package container
 
 import (
 	"fmt"
+	"net"
 	"strings"
+
+	"github.com/vishvananda/netlink"
 )
 
 type Container interface {
@@ -11,6 +14,8 @@ type Container interface {
 	GetOverlayDirs() (lowerDir, upperDir, mergeDir string, err error)
 	Pause() error
 	Unpause() error
+	GetInterfaces() ([]net.Interface, []netlink.Link, error)
+	GetInterfacesNodeMapping() (map[string]string, error)
 }
 
 // runtimeID has the following format:

@@ -1,13 +1,17 @@
 module github.com/bougou/go-container-utils
 
-go 1.21
+go 1.22
+
+replace github.com/bougou/go-container-utils v0.0.0 => ./
 
 toolchain go1.22.7
 
 require (
 	github.com/containerd/containerd v1.7.21
+	github.com/containernetworking/plugins v1.2.0
 	github.com/docker/docker v27.2.0+incompatible
 	github.com/kr/pretty v0.3.1
+	github.com/vishvananda/netlink v1.2.1-beta.2
 )
 
 require (
@@ -43,6 +47,7 @@ require (
 	github.com/moby/sys/mountinfo v0.6.2 // indirect
 	github.com/moby/sys/sequential v0.5.0 // indirect
 	github.com/moby/sys/signal v0.7.0 // indirect
+	github.com/moby/sys/symlink v0.2.0 // indirect
 	github.com/moby/sys/user v0.3.0 // indirect
 	github.com/moby/sys/userns v0.1.0 // indirect
 	github.com/moby/term v0.5.0 // indirect
@@ -54,6 +59,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
+	github.com/vishvananda/netns v0.0.0-20210104183010-2eb08e3e575f // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.45.0 // indirect
 	go.opentelemetry.io/otel v1.21.0 // indirect

@@ -1,12 +1,18 @@
+// go:build unix
+
 package container
 
 import (
 	"context"
 	"fmt"
+	"net"
 	"strings"
 
+	"github.com/containerd/containerd/pkg/netns"
+	"github.com/containernetworking/plugins/pkg/ns"
 	dockerclient "github.com/docker/docker/client"
 	"github.com/docker/docker/errdefs"
+	"github.com/vishvananda/netlink"
 )
 
 type DockerContainer struct {
@@ -164,4 +170,77 @@ func (dc *DockerContainer) Unpause() error {
 	}
 
 	return nil
+}
+
+func (dc *DockerContainer) GetInterfaces() ([]net.Interface, []netlink.Link, error) {
+	cli, err := createDockerClient()
+	if err != nil {
+		return nil, nil, fmt.Errorf("create docker client failed, err: %s", err)
+	}
+	defer cli.Close()
+
+	ctx := context.Background()
+
+	c, err := cli.ContainerInspect(ctx, dc.ID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("inspect docker container failed, err: %s", err)
+	}
+
+	// container id of the associated network container
+	// like: "container:2ce8e0caf28d450170d6cfd43087a4a1d0c17f744202271b6ab7e3949e8b9975"
+	n := c.HostConfig.NetworkMode
+	networkContainerID, _ := strings.CutPrefix(string(n), "container:")
+	newtorkContainer, err := cli.ContainerInspect(ctx, networkContainerID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("inspect docker container failed, err: %s", err)
+	}
+
+	var interfaces = []net.Interface{}
+	var links = []netlink.Link{}
+	// "SandboxKey": "/var/run/docker/netns/5048a1a60e3b",
+	sandboxKey := newtorkContainer.NetworkSettings.SandboxKey
+	netNS := netns.LoadNetNS(sandboxKey)
+	if err := netNS.Do(func(hostNs ns.NetNS) error {
+		intfs, err := net.Interfaces()
+		if err != nil {
+			return fmt.Errorf("get interfaces failed, err: %s", err)
+		}
+
+		for _, intf := range intfs {
+			link, err := netlink.LinkByName(intf.Name)
+			if err != nil {
+				fmt.Printf("link name failed, err: %s", err)
+				return err
+			}
+
+			links = append(links, link)
+			interfaces = append(interfaces, intf)
+		}
+		return nil
+	}); err != nil {
+		return nil, nil, fmt.Errorf("failed inside ns, err: %s", err)
+	}
+
+	return interfaces, links, nil
+}
+
+func (dc *DockerContainer) GetInterfacesNodeMapping() (map[string]string, error) {
+	_, links, err := dc.GetInterfaces()
+	if err != nil {
+		return nil, err
+	}
+
+	var ret = map[string]string{}
+	for _, link := range links {
+		parentIndex := link.Attrs().ParentIndex
+		if parentIndex != 0 {
+			parentLink, err := netlink.LinkByIndex(link.Attrs().ParentIndex)
+			if err != nil {
+				return nil, err
+			}
+			ret[link.Attrs().Name] = parentLink.Attrs().Name
+		}
+	}
+
+	return ret, nil
 }
