@@ -186,13 +186,25 @@ func (dc *DockerContainer) GetInterfaces() ([]net.Interface, []netlink.Link, err
 		return nil, nil, fmt.Errorf("inspect docker container failed, err: %s", err)
 	}
 
-	// container id of the associated network container
-	// like: "container:2ce8e0caf28d450170d6cfd43087a4a1d0c17f744202271b6ab7e3949e8b9975"
-	n := c.HostConfig.NetworkMode
-	networkContainerID, _ := strings.CutPrefix(string(n), "container:")
+	var networkContainerID string
+
+	networkMode := c.HostConfig.NetworkMode
+
+	switch networkMode {
+	case "none", "host":
+		// for the pause container itself
+		// networkMode == "host", means the container is run in host network mode.
+		networkContainerID = dc.ID
+
+	default:
+		// container id of the associated network container
+		// like: "container:2ce8e0caf28d450170d6cfd43087a4a1d0c17f744202271b6ab7e3949e8b9975"
+		networkContainerID, _ = strings.CutPrefix(string(networkMode), "container:")
+	}
+
 	newtorkContainer, err := cli.ContainerInspect(ctx, networkContainerID)
 	if err != nil {
-		return nil, nil, fmt.Errorf("inspect docker container failed, err: %s", err)
+		return nil, nil, fmt.Errorf("inspect docker network container (%s) failed, err: %s", networkContainerID, err)
 	}
 
 	var interfaces = []net.Interface{}

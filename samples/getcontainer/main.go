@@ -1,23 +1,32 @@
 package main
 
 import (
+	"flag"
 	"fmt"
+	"os"
 
 	ctutils "github.com/bougou/go-container-utils"
 	"github.com/kr/pretty"
 )
 
 func main() {
-	containerID := "docker://2e1a4fc87c8fe2c14843f494133773767eea16c14b9060ffc01cddb6292155b6"
+	var containerID string
+	flag.StringVar(&containerID, "cid", "", "container id")
+	flag.Parse()
+
+	if containerID == "" {
+		fmt.Println("Error, must provide container id")
+		os.Exit(1)
+	}
 
 	container, err := ctutils.NewContainer(containerID)
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("load container failed, err: %s", err))
 	}
 
 	intfs, links, err := container.GetInterfaces()
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("get interfaces failed, err: %s", err))
 	}
 
 	fmt.Printf("got %d interfaces, %d links", len(intfs), len(links))
@@ -30,7 +39,7 @@ func main() {
 
 	m, err := container.GetInterfacesNodeMapping()
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("get interfaces node mapping failed, err: %s", err))
 	}
 	pretty.Println(m)
 }
