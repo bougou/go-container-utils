@@ -7,6 +7,7 @@ import (
 
 	ctutils "github.com/bougou/go-container-utils"
 	"github.com/kr/pretty"
+	"github.com/vishvananda/netlink"
 )
 
 func main() {
@@ -42,4 +43,12 @@ func main() {
 		panic(fmt.Errorf("get interfaces node mapping failed, err: %s", err))
 	}
 	pretty.Println(m)
+
+	for containerInterface, nodeInterface := range m {
+		link, err := netlink.LinkByName(nodeInterface)
+		if err != nil {
+			panic(fmt.Errorf("get node link (%s) for container (%s) failed, err: %s", nodeInterface, containerInterface, err))
+		}
+		pretty.Println(link)
+	}
 }

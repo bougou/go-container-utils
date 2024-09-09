@@ -18,20 +18,20 @@ type Container interface {
 	GetInterfacesNodeMapping() (map[string]string, error)
 }
 
-// runtimeID has the following format:
-// docker://xxxxxx
-// containerd://xxxx
-func NewContainer(runtimeID string) (Container, error) {
+// runtimeContainerID has the following format:
+//   - docker://xxxxxx
+//   - containerd://xxxx
+func NewContainer(runtimeContainerID string) (Container, error) {
 	var runtime string
 	var id string
 
-	if strings.HasPrefix(runtimeID, "docker://") {
+	if strings.HasPrefix(runtimeContainerID, "docker://") {
 		runtime = "docker"
-		id = strings.TrimPrefix(runtimeID, "docker://")
+		id = strings.TrimPrefix(runtimeContainerID, "docker://")
 
-	} else if strings.HasPrefix(runtimeID, "containerd://") {
+	} else if strings.HasPrefix(runtimeContainerID, "containerd://") {
 		runtime = "containerd"
-		id = strings.TrimPrefix(runtimeID, "containerd://")
+		id = strings.TrimPrefix(runtimeContainerID, "containerd://")
 	}
 
 	switch runtime {
@@ -42,7 +42,7 @@ func NewContainer(runtimeID string) (Container, error) {
 		return NewContainerdContainer(id), nil
 
 	default:
-		return nil, fmt.Errorf("unknown container runtime: %s", runtime)
+		return nil, fmt.Errorf("unknown container runtime: (%s)", runtime)
 	}
 }
 
@@ -55,6 +55,6 @@ func RuntimeRootDir(runtime string) (string, error) {
 		return ContainerdRootDir()
 
 	default:
-		return "", fmt.Errorf("unknown container runtime: %s", runtime)
+		return "", fmt.Errorf("unknown container runtime: (%s)", runtime)
 	}
 }
