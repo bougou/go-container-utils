@@ -219,16 +219,14 @@ func (dc *DockerContainer) GetInterfaces() ([]net.Interface, []netlink.Link, err
 	var links = []netlink.Link{}
 	// "SandboxKey": "/var/run/docker/netns/5048a1a60e3b",
 	// symbolic link on node: /var/run -> /run
-	_sandboxKey := newtorkContainer.NetworkSettings.SandboxKey
+	sandboxKey := newtorkContainer.NetworkSettings.SandboxKey
 
-	sandboxKey, err := filepath.EvalSymlinks(_sandboxKey)
-	if err != nil {
-		return nil, nil, fmt.Errorf("eval symlink for path (%s) failed, err: %s", _sandboxKey, err)
+	if strings.HasPrefix(sandboxKey, "/var/run") {
+		sandboxKey, _ = strings.CutPrefix(sandboxKey, "/var")
 	}
 
-	sandboxKey = filepath.Join(dc.hostRoot, sandboxKey)
-
-	netNS := netns.LoadNetNS(sandboxKey)
+	netnsPath := filepath.Join(dc.hostRoot, sandboxKey)
+	netNS := netns.LoadNetNS(netnsPath)
 	if err := netNS.Do(func(hostNs ns.NetNS) error {
 		intfs, err := net.Interfaces()
 		if err != nil {
