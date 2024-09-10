@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"path/filepath"
 	"strings"
 
 	"github.com/containerd/containerd/pkg/netns"
@@ -17,13 +18,16 @@ import (
 
 type DockerContainer struct {
 	ID string
+
+	hostRoot string
 }
 
 var _ Container = (*DockerContainer)(nil)
 
 func NewDockerContainer(containerID string) *DockerContainer {
 	return &DockerContainer{
-		ID: containerID,
+		ID:       containerID,
+		hostRoot: "/",
 	}
 }
 
@@ -49,6 +53,10 @@ func DockerRootDir() (string, error) {
 	}
 
 	return info.DockerRootDir, nil
+}
+
+func (dc *DockerContainer) WithHostRoot(hostRoot string) {
+	dc.hostRoot = hostRoot
 }
 
 func (dc *DockerContainer) IsExist() (bool, error) {
@@ -210,7 +218,16 @@ func (dc *DockerContainer) GetInterfaces() ([]net.Interface, []netlink.Link, err
 	var interfaces = []net.Interface{}
 	var links = []netlink.Link{}
 	// "SandboxKey": "/var/run/docker/netns/5048a1a60e3b",
-	sandboxKey := newtorkContainer.NetworkSettings.SandboxKey
+	// symbolic link on node: /var/run -> /run
+	_sandboxKey := newtorkContainer.NetworkSettings.SandboxKey
+
+	sandboxKey, err := filepath.EvalSymlinks(_sandboxKey)
+	if err != nil {
+		return nil, nil, fmt.Errorf("eval symlink for path (%s) failed, err: %s", _sandboxKey, err)
+	}
+
+	sandboxKey = filepath.Join(dc.hostRoot, sandboxKey)
+
 	netNS := netns.LoadNetNS(sandboxKey)
 	if err := netNS.Do(func(hostNs ns.NetNS) error {
 		intfs, err := net.Interfaces()
@@ -221,8 +238,7 @@ func (dc *DockerContainer) GetInterfaces() ([]net.Interface, []netlink.Link, err
 		for _, intf := range intfs {
 			link, err := netlink.LinkByName(intf.Name)
 			if err != nil {
-				fmt.Printf("link name failed, err: %s", err)
-				return err
+				return fmt.Errorf("link name for (%s) failed, err: %s", intf.Name, err)
 			}
 
 			links = append(links, link)

@@ -9,6 +9,7 @@ import (
 )
 
 type Container interface {
+	WithHostRoot(hostRoot string)
 	IsExist() (bool, error)
 	IsOverlay() (bool, error)
 	GetOverlayDirs() (lowerDir, upperDir, mergeDir string, err error)

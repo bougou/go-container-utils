@@ -17,14 +17,16 @@ import (
 )
 
 type ContainerdContainer struct {
-	ID string
+	ID       string
+	hostRoot string
 }
 
 var _ Container = (*ContainerdContainer)(nil)
 
 func NewContainerdContainer(containerID string) *ContainerdContainer {
 	return &ContainerdContainer{
-		ID: containerID,
+		ID:       containerID,
+		hostRoot: "/",
 	}
 }
 
@@ -44,6 +46,10 @@ func ContainerdRootDir() (string, error) {
 	defer cli.Close()
 
 	return defaults.DefaultRootDir, nil
+}
+
+func (dc *ContainerdContainer) WithHostRoot(hostRoot string) {
+	dc.hostRoot = hostRoot
 }
 
 func (cc *ContainerdContainer) IsExist() (bool, error) {
