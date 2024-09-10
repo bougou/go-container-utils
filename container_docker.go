@@ -253,7 +253,7 @@ func (dc *DockerContainer) GetInterfaces() ([]net.Interface, []netlink.Link, err
 func (dc *DockerContainer) GetInterfacesNodeMapping() (map[string]string, error) {
 	_, links, err := dc.GetInterfaces()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("call GetInterfaces failed, err: %s", err)
 	}
 
 	var ret = map[string]string{}
@@ -262,7 +262,7 @@ func (dc *DockerContainer) GetInterfacesNodeMapping() (map[string]string, error)
 		if parentIndex != 0 {
 			parentLink, err := netlink.LinkByIndex(link.Attrs().ParentIndex)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("call LinkByIndex failed, err: %s", err)
 			}
 			ret[link.Attrs().Name] = parentLink.Attrs().Name
 		}
