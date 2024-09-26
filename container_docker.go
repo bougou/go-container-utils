@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -223,6 +224,28 @@ func (dc *DockerContainer) IsOverlay() (bool, error) {
 	}
 
 	return c.GraphDriver.Name == "overlay2", nil
+}
+
+func (dc *DockerContainer) LoadImage(imageTarFilePath string) error {
+	cli, err := createDockerClient()
+	if err != nil {
+		return fmt.Errorf("create docker client failed, err: %s", err)
+	}
+	defer cli.Close()
+
+	imageFile, err := os.Open(imageTarFilePath)
+	if err != nil {
+		return fmt.Errorf("open image tar file failed, err: %s", err)
+	}
+	defer imageFile.Close()
+
+	loadResponse, err := cli.ImageLoad(context.Background(), imageFile, true)
+	if err != nil {
+		return fmt.Errorf("load image failed, err: %s", err)
+	}
+	defer loadResponse.Body.Close()
+
+	return nil
 }
 
 func (dc *DockerContainer) Pause() error {

@@ -8,12 +8,15 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
+var ErrNotImplemented error = fmt.Errorf("not implemented")
+
 type Container interface {
 	GetInterfaces() ([]net.Interface, []netlink.Link, error)
 	GetInterfacesNodeMapping() (map[string]string, error)
 	GetOverlayDirs() (lowerDir, upperDir, mergeDir string, err error)
 	IsExist() (bool, error)
 	IsOverlay() (bool, error)
+	LoadImage(imageTarFilePath string) error
 	Pause() error
 	Unpause() error
 	WithHostRoot(hostRoot string)

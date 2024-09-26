@@ -49,11 +49,11 @@ func ContainerdRootDir() (string, error) {
 }
 
 func (dc *ContainerdContainer) GetInterfaces() ([]net.Interface, []netlink.Link, error) {
-	return nil, nil, fmt.Errorf("unimplemented")
+	return nil, nil, ErrNotImplemented
 }
 
 func (dc *ContainerdContainer) GetInterfacesNodeMapping() (map[string]string, error) {
-	return nil, fmt.Errorf("unimplemented")
+	return nil, ErrNotImplemented
 }
 
 func (cc *ContainerdContainer) GetOverlayDirs() (lowerDir, upperDir, mergedDir string, err error) {
@@ -145,6 +145,10 @@ func (cc *ContainerdContainer) IsOverlay() (bool, error) {
 	}
 
 	return c.Snapshotter != "overlayfs", nil
+}
+
+func (cc *ContainerdContainer) LoadImage(imageTarFilePath string) error {
+	return ErrNotImplemented
 }
 
 func (cc *ContainerdContainer) Pause() error {
