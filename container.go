@@ -9,14 +9,14 @@ import (
 )
 
 type Container interface {
-	WithHostRoot(hostRoot string)
-	IsExist() (bool, error)
-	IsOverlay() (bool, error)
-	GetOverlayDirs() (lowerDir, upperDir, mergeDir string, err error)
-	Pause() error
-	Unpause() error
 	GetInterfaces() ([]net.Interface, []netlink.Link, error)
 	GetInterfacesNodeMapping() (map[string]string, error)
+	GetOverlayDirs() (lowerDir, upperDir, mergeDir string, err error)
+	IsExist() (bool, error)
+	IsOverlay() (bool, error)
+	Pause() error
+	Unpause() error
+	WithHostRoot(hostRoot string)
 }
 
 // runtimeContainerID has the following format:

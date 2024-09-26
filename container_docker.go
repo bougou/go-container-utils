@@ -55,131 +55,6 @@ func DockerRootDir() (string, error) {
 	return info.DockerRootDir, nil
 }
 
-func (dc *DockerContainer) WithHostRoot(hostRoot string) {
-	dc.hostRoot = hostRoot
-}
-
-func (dc *DockerContainer) IsExist() (bool, error) {
-	cli, err := createDockerClient()
-	if err != nil {
-		return false, fmt.Errorf("create docker client failed, err: %s", err)
-	}
-	defer cli.Close()
-
-	ctx := context.Background()
-	if _, err := cli.ContainerInspect(ctx, dc.ID); err != nil {
-		if errdefs.IsNotFound(err) {
-			return false, nil
-		}
-		return false, fmt.Errorf("inspect docker container failed, err: %s", err)
-	}
-
-	return true, nil
-}
-
-func (dc *DockerContainer) IsOverlay() (bool, error) {
-	cli, err := createDockerClient()
-	if err != nil {
-		return false, fmt.Errorf("create docker client failed, err: %s", err)
-	}
-	defer cli.Close()
-
-	ctx := context.Background()
-
-	c, err := cli.ContainerInspect(ctx, dc.ID)
-	if err != nil {
-		return false, fmt.Errorf("inspect docker container failed, err: %s", err)
-	}
-
-	return c.GraphDriver.Name == "overlay2", nil
-}
-
-func (dc *DockerContainer) GetOverlayDirs() (lowerDir, upperDir, mergedDir string, err error) {
-	cli, err := createDockerClient()
-	if err != nil {
-		return "", "", "", fmt.Errorf("create docker client failed, err: %s", err)
-	}
-	defer cli.Close()
-
-	ctx := context.Background()
-
-	c, err := cli.ContainerInspect(ctx, dc.ID)
-	if err != nil {
-		return "", "", "", fmt.Errorf("inspect docker container failed, err: %s", err)
-	}
-
-	if c.GraphDriver.Name != "overlay2" {
-		return "", "", "", fmt.Errorf("docker graph driver is not overlay")
-	}
-
-	lowerDir = c.GraphDriver.Data["LowerDir"]
-	upperDir = c.GraphDriver.Data["UpperDir"]
-	mergedDir = c.GraphDriver.Data["MergedDir"]
-
-	// Remove init layer, left are all image layers.
-	dirs := strings.Split(lowerDir, ":")
-	if len(dirs) != 0 {
-		if strings.HasSuffix(dirs[0], "-init/diff") {
-			dirs = dirs[1:]
-			lowerDir = strings.Join(dirs, ":")
-		}
-	}
-
-	if lowerDir == "" {
-		err = fmt.Errorf("lower dir can not be empty")
-	}
-	if upperDir == "" {
-		err = fmt.Errorf("upper dir can not be empty")
-	}
-	if mergedDir == "" {
-		err = fmt.Errorf("merged dir can not be empty")
-	}
-
-	return
-}
-
-func (dc *DockerContainer) Pause() error {
-	cli, err := createDockerClient()
-	if err != nil {
-		return fmt.Errorf("create docker client failed, err: %s", err)
-	}
-	defer cli.Close()
-
-	ctx := context.Background()
-
-	containerJSON, err := cli.ContainerInspect(ctx, dc.ID)
-	if err != nil {
-		return fmt.Errorf("inspect docker container failed, err: %s", err)
-	}
-
-	if !containerJSON.State.Paused {
-		return cli.ContainerPause(ctx, dc.ID)
-	}
-
-	return nil
-}
-
-func (dc *DockerContainer) Unpause() error {
-	cli, err := createDockerClient()
-	if err != nil {
-		return fmt.Errorf("create docker client failed, err: %s", err)
-	}
-	defer cli.Close()
-
-	ctx := context.Background()
-
-	containerJSON, err := cli.ContainerInspect(ctx, dc.ID)
-	if err != nil {
-		return fmt.Errorf("inspect docker container failed, err: %s", err)
-	}
-
-	if containerJSON.State.Paused {
-		return cli.ContainerUnpause(ctx, dc.ID)
-	}
-
-	return nil
-}
-
 func (dc *DockerContainer) GetInterfaces() ([]net.Interface, []netlink.Link, error) {
 	cli, err := createDockerClient()
 	if err != nil {
@@ -269,4 +144,129 @@ func (dc *DockerContainer) GetInterfacesNodeMapping() (map[string]string, error)
 	}
 
 	return ret, nil
+}
+
+func (dc *DockerContainer) GetOverlayDirs() (lowerDir, upperDir, mergedDir string, err error) {
+	cli, err := createDockerClient()
+	if err != nil {
+		return "", "", "", fmt.Errorf("create docker client failed, err: %s", err)
+	}
+	defer cli.Close()
+
+	ctx := context.Background()
+
+	c, err := cli.ContainerInspect(ctx, dc.ID)
+	if err != nil {
+		return "", "", "", fmt.Errorf("inspect docker container failed, err: %s", err)
+	}
+
+	if c.GraphDriver.Name != "overlay2" {
+		return "", "", "", fmt.Errorf("docker graph driver is not overlay")
+	}
+
+	lowerDir = c.GraphDriver.Data["LowerDir"]
+	upperDir = c.GraphDriver.Data["UpperDir"]
+	mergedDir = c.GraphDriver.Data["MergedDir"]
+
+	// Remove init layer, left are all image layers.
+	dirs := strings.Split(lowerDir, ":")
+	if len(dirs) != 0 {
+		if strings.HasSuffix(dirs[0], "-init/diff") {
+			dirs = dirs[1:]
+			lowerDir = strings.Join(dirs, ":")
+		}
+	}
+
+	if lowerDir == "" {
+		err = fmt.Errorf("lower dir can not be empty")
+	}
+	if upperDir == "" {
+		err = fmt.Errorf("upper dir can not be empty")
+	}
+	if mergedDir == "" {
+		err = fmt.Errorf("merged dir can not be empty")
+	}
+
+	return
+}
+
+func (dc *DockerContainer) IsExist() (bool, error) {
+	cli, err := createDockerClient()
+	if err != nil {
+		return false, fmt.Errorf("create docker client failed, err: %s", err)
+	}
+	defer cli.Close()
+
+	ctx := context.Background()
+	if _, err := cli.ContainerInspect(ctx, dc.ID); err != nil {
+		if errdefs.IsNotFound(err) {
+			return false, nil
+		}
+		return false, fmt.Errorf("inspect docker container failed, err: %s", err)
+	}
+
+	return true, nil
+}
+
+func (dc *DockerContainer) IsOverlay() (bool, error) {
+	cli, err := createDockerClient()
+	if err != nil {
+		return false, fmt.Errorf("create docker client failed, err: %s", err)
+	}
+	defer cli.Close()
+
+	ctx := context.Background()
+
+	c, err := cli.ContainerInspect(ctx, dc.ID)
+	if err != nil {
+		return false, fmt.Errorf("inspect docker container failed, err: %s", err)
+	}
+
+	return c.GraphDriver.Name == "overlay2", nil
+}
+
+func (dc *DockerContainer) Pause() error {
+	cli, err := createDockerClient()
+	if err != nil {
+		return fmt.Errorf("create docker client failed, err: %s", err)
+	}
+	defer cli.Close()
+
+	ctx := context.Background()
+
+	containerJSON, err := cli.ContainerInspect(ctx, dc.ID)
+	if err != nil {
+		return fmt.Errorf("inspect docker container failed, err: %s", err)
+	}
+
+	if !containerJSON.State.Paused {
+		return cli.ContainerPause(ctx, dc.ID)
+	}
+
+	return nil
+}
+
+func (dc *DockerContainer) Unpause() error {
+	cli, err := createDockerClient()
+	if err != nil {
+		return fmt.Errorf("create docker client failed, err: %s", err)
+	}
+	defer cli.Close()
+
+	ctx := context.Background()
+
+	containerJSON, err := cli.ContainerInspect(ctx, dc.ID)
+	if err != nil {
+		return fmt.Errorf("inspect docker container failed, err: %s", err)
+	}
+
+	if containerJSON.State.Paused {
+		return cli.ContainerUnpause(ctx, dc.ID)
+	}
+
+	return nil
+}
+
+func (dc *DockerContainer) WithHostRoot(hostRoot string) {
+	dc.hostRoot = hostRoot
 }

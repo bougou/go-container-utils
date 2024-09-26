@@ -48,44 +48,12 @@ func ContainerdRootDir() (string, error) {
 	return defaults.DefaultRootDir, nil
 }
 
-func (dc *ContainerdContainer) WithHostRoot(hostRoot string) {
-	dc.hostRoot = hostRoot
+func (dc *ContainerdContainer) GetInterfaces() ([]net.Interface, []netlink.Link, error) {
+	return nil, nil, fmt.Errorf("unimplemented")
 }
 
-func (cc *ContainerdContainer) IsExist() (bool, error) {
-	cli, err := createContainerdClient()
-	if err != nil {
-		return false, fmt.Errorf("create containerd client failed, err: %s", err)
-	}
-	defer cli.Close()
-
-	containerService := cli.ContainerService()
-	ctx := namespaces.WithNamespace(context.Background(), "k8s.io")
-	if _, err := containerService.Get(ctx, cc.ID); err != nil {
-		if errdefs.IsNotFound(err) {
-			return false, nil
-		}
-		return false, fmt.Errorf("inspect containerd container failed, err: %s", err)
-	}
-
-	return true, nil
-}
-
-func (cc *ContainerdContainer) IsOverlay() (bool, error) {
-	cli, err := createContainerdClient()
-	if err != nil {
-		return false, fmt.Errorf("create containerd client failed, err: %s", err)
-	}
-	defer cli.Close()
-
-	containerService := cli.ContainerService()
-	ctx := namespaces.WithNamespace(context.Background(), "k8s.io")
-	c, err := containerService.Get(ctx, cc.ID)
-	if err != nil {
-		return false, fmt.Errorf("get containerd container failed, err: %s", err)
-	}
-
-	return c.Snapshotter != "overlayfs", nil
+func (dc *ContainerdContainer) GetInterfacesNodeMapping() (map[string]string, error) {
+	return nil, fmt.Errorf("unimplemented")
 }
 
 func (cc *ContainerdContainer) GetOverlayDirs() (lowerDir, upperDir, mergedDir string, err error) {
@@ -141,6 +109,42 @@ func (cc *ContainerdContainer) GetOverlayDirs() (lowerDir, upperDir, mergedDir s
 	}
 
 	return
+}
+
+func (cc *ContainerdContainer) IsExist() (bool, error) {
+	cli, err := createContainerdClient()
+	if err != nil {
+		return false, fmt.Errorf("create containerd client failed, err: %s", err)
+	}
+	defer cli.Close()
+
+	containerService := cli.ContainerService()
+	ctx := namespaces.WithNamespace(context.Background(), "k8s.io")
+	if _, err := containerService.Get(ctx, cc.ID); err != nil {
+		if errdefs.IsNotFound(err) {
+			return false, nil
+		}
+		return false, fmt.Errorf("inspect containerd container failed, err: %s", err)
+	}
+
+	return true, nil
+}
+
+func (cc *ContainerdContainer) IsOverlay() (bool, error) {
+	cli, err := createContainerdClient()
+	if err != nil {
+		return false, fmt.Errorf("create containerd client failed, err: %s", err)
+	}
+	defer cli.Close()
+
+	containerService := cli.ContainerService()
+	ctx := namespaces.WithNamespace(context.Background(), "k8s.io")
+	c, err := containerService.Get(ctx, cc.ID)
+	if err != nil {
+		return false, fmt.Errorf("get containerd container failed, err: %s", err)
+	}
+
+	return c.Snapshotter != "overlayfs", nil
 }
 
 func (cc *ContainerdContainer) Pause() error {
@@ -205,6 +209,10 @@ func (cc *ContainerdContainer) Unpause() error {
 	return nil
 }
 
+func (dc *ContainerdContainer) WithHostRoot(hostRoot string) {
+	dc.hostRoot = hostRoot
+}
+
 func (cc *ContainerdContainer) getRootFS() (string, error) {
 	cli, err := createContainerdClient()
 	if err != nil {
@@ -226,12 +234,4 @@ func (cc *ContainerdContainer) getRootFS() (string, error) {
 	defer task.Delete(ctx)
 
 	return fmt.Sprintf("/run/containerd/io.containerd.runtime.v2.task/k8s.io/%s/rootfs", cc.ID), nil
-}
-
-func (dc *ContainerdContainer) GetInterfaces() ([]net.Interface, []netlink.Link, error) {
-	return nil, nil, fmt.Errorf("unimplemented")
-}
-
-func (dc *ContainerdContainer) GetInterfacesNodeMapping() (map[string]string, error) {
-	return nil, fmt.Errorf("unimplemented")
 }
