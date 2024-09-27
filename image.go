@@ -1,7 +1,5 @@
 package container
 
-//build !windows
-
 import (
 	"context"
 	"fmt"

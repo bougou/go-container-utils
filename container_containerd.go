@@ -1,5 +1,3 @@
-// go:build unix
-
 package container
 
 import (
@@ -11,8 +9,8 @@ import (
 
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/defaults"
-	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/namespaces"
+	"github.com/containerd/errdefs"
 	"github.com/vishvananda/netlink"
 )
 

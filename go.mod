@@ -8,9 +8,11 @@ toolchain go1.22.7
 
 require (
 	github.com/containerd/containerd v1.7.21
+	github.com/containerd/errdefs v0.1.0
 	github.com/containernetworking/plugins v1.2.0
 	github.com/docker/docker v27.2.0+incompatible
 	github.com/kr/pretty v0.3.1
+	github.com/regclient/regclient v0.7.1
 	github.com/vishvananda/netlink v1.2.1-beta.2
 )
 
@@ -22,7 +24,6 @@ require (
 	github.com/containerd/cgroups v1.1.0 // indirect
 	github.com/containerd/containerd/api v1.7.19 // indirect
 	github.com/containerd/continuity v0.4.2 // indirect
-	github.com/containerd/errdefs v0.1.0 // indirect
 	github.com/containerd/fifo v1.1.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/platforms v0.2.1 // indirect
@@ -58,7 +59,6 @@ require (
 	github.com/opencontainers/runtime-spec v1.1.0 // indirect
 	github.com/opencontainers/selinux v1.11.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/regclient/regclient v0.7.1 // indirect
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/ulikunitz/xz v0.5.12 // indirect
