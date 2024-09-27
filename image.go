@@ -14,34 +14,48 @@ import (
 	"github.com/regclient/regclient/types/ref"
 )
 
-func SafeImageFileName(image string, imagePlatform string) (imageTarFileName, imageDigestFileName string) {
-	safeFileName := fmt.Sprintf("%s_%s", imagePlatform, image)
+func SafeImageFileName(image string, imagePlatform string) (safeFileName string) {
+	safeFileName = fmt.Sprintf("%s_%s", imagePlatform, image)
 	safeFileName = strings.ReplaceAll(safeFileName, "/", "_")
 	safeFileName = strings.ReplaceAll(safeFileName, ":", "_")
-
-	imageTarFileName = fmt.Sprintf("%s.tar", safeFileName)
-	imageDigestFileName = fmt.Sprintf("%s.digest", safeFileName)
-
 	return
 }
 
-func DownloadImageTarFile(image string, imagePlatform string, saveTarFileDir string) error {
-	if saveTarFileDir == "" {
-		return fmt.Errorf("saveTarFileDir can not be empty")
+func LoadImageTarFile(image string, imagePlatform string, saveDir string) error {
+	dc := NewDockerContainer("docker://fakeid")
+
+	safeFileName := SafeImageFileName(image, imagePlatform)
+	imageFileDir := filepath.Join(saveDir, safeFileName)
+	imageTarFilePath := filepath.Join(imageFileDir, safeFileName+".tar")
+
+	if err := dc.LoadImage(imageTarFilePath); err != nil {
+		return fmt.Errorf("load image failed, err: %s", err)
+	}
+
+	return nil
+}
+
+// image is the url of the image.
+// imagePlatform example: linux/amd64, linux/arm64
+func DownloadImageTarFile(image string, imagePlatform string, saveDir string) error {
+	if saveDir == "" {
+		return fmt.Errorf("saveDir can not be empty")
 	}
 
 	if imagePlatform == "" {
 		return fmt.Errorf("imagePlatform can not be empty")
 	}
 
-	imageTarFileName, imageDigestFileName := SafeImageFileName(image, imagePlatform)
-	imageTarFilePath := filepath.Join(saveTarFileDir, imageTarFileName)
-	imageDigestFilePath := filepath.Join(saveTarFileDir, imageDigestFileName)
+	safeFileName := SafeImageFileName(image, imagePlatform)
+	imageTarFileName := fmt.Sprintf("%s.tar", safeFileName)
+	imageIDFileName := fmt.Sprintf("%s.id", safeFileName)
 
-	opts := []regclient.ImageOpts{}
-	p, err := platform.Parse(imagePlatform)
-	if err != nil {
-		return fmt.Errorf("parse platform failed, err: %s", err)
+	imageFileDir := filepath.Join(saveDir, safeFileName)
+	imageTarFilePath := filepath.Join(imageFileDir, imageTarFileName)
+	imageIDFilePath := filepath.Join(imageFileDir, imageIDFileName)
+
+	if err := os.MkdirAll(imageFileDir, 0700); err != nil {
+		return fmt.Errorf("create image file dir failed, err: %s", err)
 	}
 
 	rc := regclient.New()
@@ -52,26 +66,36 @@ func DownloadImageTarFile(image string, imagePlatform string, saveTarFileDir str
 		return fmt.Errorf("create ref failed, err: %s", err)
 	}
 
-	opts = append(opts, regclient.ImageWithExportRef(r))
+	p, err := platform.Parse(imagePlatform)
+	if err != nil {
+		return fmt.Errorf("parse platform failed, err: %s", err)
+	}
 
 	m, err := rc.ManifestGet(ctx, r, regclient.WithManifestPlatform(p))
 	if err != nil {
 		return fmt.Errorf("get manifest failed, err: %s", err)
 	}
 
-	if mi, ok := m.(manifest.Imager); ok {
-		d, err := mi.GetConfig()
-		if err != nil {
-			return fmt.Errorf("get image config failed, err: %s", err)
-		}
-
-		fmt.Println("repo digest", d.Digest.String())
-	}
-
 	imageDigest := m.GetDescriptor().Digest.String()
-	fmt.Println("image digest", imageDigest)
-
+	if imageDigest == "" {
+		return fmt.Errorf("got empty image digest")
+	}
+	// this can make sure we reference a unique image
+	// because it will unset the tag, so we need to set the tag later.
 	r = r.SetDigest(imageDigest)
+
+	mi, ok := m.(manifest.Imager)
+	if !ok {
+		return fmt.Errorf("manifest does not implement Imager interface")
+	}
+	d, err := mi.GetConfig()
+	if err != nil {
+		return fmt.Errorf("get image config failed, err: %s", err)
+	}
+	imageID := d.Digest.String()
+	if imageID == "" {
+		return fmt.Errorf("got empty image id")
+	}
 
 	var w io.Writer
 	w, err = os.Create(imageTarFilePath)
@@ -79,11 +103,19 @@ func DownloadImageTarFile(image string, imagePlatform string, saveTarFileDir str
 		return fmt.Errorf("create image tar file failed, err: %s", err)
 	}
 
+	opts := []regclient.ImageOpts{}
+	eRef, err := ref.New(image)
+	if err != nil {
+		return fmt.Errorf("cannot parse %s: %w", image, err)
+	}
+	// reset the tag here.
+	opts = append(opts, regclient.ImageWithExportRef(eRef))
+
 	if err := rc.ImageExport(ctx, r, w, opts...); err != nil {
 		return fmt.Errorf("import export failed, err: %s", err)
 	}
 
-	if err := os.WriteFile(imageDigestFilePath, []byte(imageDigest+"\n"), 0644); err != nil {
+	if err := os.WriteFile(imageIDFilePath, []byte(imageID+"\n"), 0644); err != nil {
 		return fmt.Errorf("write image digest file failed, err: %s", err)
 	}
 
