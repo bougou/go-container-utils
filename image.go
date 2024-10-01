@@ -14,30 +14,47 @@ import (
 	"github.com/regclient/regclient/types/ref"
 )
 
-func SafeImageFileName(image string, imagePlatform string) (safeFileName string) {
+// eg:
+//   - image: bitnami/postgresql:16.4.0
+//   - imagePlatform: linux/amd64
+//   - safeFileName: linux_amd64_bitnami_postgresql_16.4.0
+func safeImageFileName(image, imagePlatform string) (safeFileName string) {
 	safeFileName = fmt.Sprintf("%s_%s", imagePlatform, image)
 	safeFileName = strings.ReplaceAll(safeFileName, "/", "_")
 	safeFileName = strings.ReplaceAll(safeFileName, ":", "_")
 	return
 }
 
-func LoadImageTarFile(image string, imagePlatform string, saveDir string) error {
-	dc := NewDockerContainer("docker://fakeid")
+func SafeImageFileDir(image, imagePlatform, saveDir string) (safeFileDir string) {
+	safeFileName := safeImageFileName(image, imagePlatform)
+	return filepath.Join(saveDir, safeFileName)
+}
 
-	safeFileName := SafeImageFileName(image, imagePlatform)
-	imageFileDir := filepath.Join(saveDir, safeFileName)
-	imageTarFilePath := filepath.Join(imageFileDir, safeFileName+".tar")
+func SafeImageTarFileName(image, imagePlatform string) (safeFileTarName string) {
+	safeFileName := safeImageFileName(image, imagePlatform)
+	return fmt.Sprintf("%s.tar", safeFileName)
+}
 
-	if err := dc.LoadImage(imageTarFilePath); err != nil {
-		return fmt.Errorf("load image failed, err: %s", err)
-	}
+func SafeImageTarFilePath(image, imagePlatform, saveDir string) (safeFileTarName string) {
+	safeImageFileDir := SafeImageFileDir(image, imagePlatform, saveDir)
+	safeImageTarFileName := SafeImageTarFileName(image, imagePlatform)
+	return filepath.Join(safeImageFileDir, safeImageTarFileName)
+}
 
-	return nil
+func SafeImageIDFileName(image, imagePlatform string) (safeFileTarName string) {
+	safeFileName := safeImageFileName(image, imagePlatform)
+	return fmt.Sprintf("%s.id", safeFileName)
+}
+
+func SafeImageIDFilePath(image, imagePlatform, saveDir string) (safeFileTarName string) {
+	safeImageFileDir := SafeImageFileDir(image, imagePlatform, saveDir)
+	safeImageIDFileName := SafeImageIDFileName(image, imagePlatform)
+	return filepath.Join(safeImageFileDir, safeImageIDFileName)
 }
 
 // image is the url of the image.
 // imagePlatform example: linux/amd64, linux/arm64
-func DownloadImageTarFile(image string, imagePlatform string, saveDir string) error {
+func DownloadImageTarFile(image, imagePlatform, saveDir string) error {
 	if saveDir == "" {
 		return fmt.Errorf("saveDir can not be empty")
 	}
@@ -46,7 +63,7 @@ func DownloadImageTarFile(image string, imagePlatform string, saveDir string) er
 		return fmt.Errorf("imagePlatform can not be empty")
 	}
 
-	safeFileName := SafeImageFileName(image, imagePlatform)
+	safeFileName := safeImageFileName(image, imagePlatform)
 	imageTarFileName := fmt.Sprintf("%s.tar", safeFileName)
 	imageIDFileName := fmt.Sprintf("%s.id", safeFileName)
 

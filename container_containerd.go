@@ -146,7 +146,25 @@ func (cc *ContainerdContainer) IsOverlay() (bool, error) {
 }
 
 func (cc *ContainerdContainer) LoadImage(imageTarFilePath string) error {
-	return ErrNotImplemented
+	cli, err := createContainerdClient()
+	if err != nil {
+		return fmt.Errorf("create containerd client failed, err: %s", err)
+	}
+	defer cli.Close()
+
+	imageFile, err := os.Open(imageTarFilePath)
+	if err != nil {
+		return fmt.Errorf("open image tar file failed, err: %s", err)
+	}
+	defer imageFile.Close()
+
+	ctx := namespaces.WithNamespace(context.Background(), "k8s.io")
+
+	if _, err := cli.Import(ctx, imageFile); err != nil {
+		return fmt.Errorf("import image failed, err: %s", err)
+	}
+
+	return nil
 }
 
 func (cc *ContainerdContainer) Pause() error {

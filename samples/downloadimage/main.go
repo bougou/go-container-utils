@@ -12,9 +12,18 @@ func download(image string, imagePlatform string, saveDir string) {
 		panic(err)
 	}
 }
-func load(image string, imagePlatform string, saveDir string) {
-	fmt.Printf(">>> load image (%s), platform (%s) from dir (%s)\n", image, imagePlatform, saveDir)
-	if err := ctutils.LoadImageTarFile(image, imagePlatform, saveDir); err != nil {
+func load(runtime ctutils.Runtime, image string, imagePlatform string, saveDir string) {
+	fmt.Printf(">>> runtime (%s) load image (%s), platform (%s) from dir (%s)\n", runtime, image, imagePlatform, saveDir)
+
+	fakeRuntimeContaienrID := fmt.Sprintf("%s://%s", runtime, "fake-container-id")
+
+	c, err := ctutils.NewContainer(fakeRuntimeContaienrID)
+	if err != nil {
+		panic(err)
+	}
+
+	imageTarFilePath := ctutils.SafeImageTarFilePath(image, imagePlatform, saveDir)
+	if err := c.LoadImage(imageTarFilePath); err != nil {
 		panic(err)
 	}
 }
@@ -24,5 +33,5 @@ func main() {
 	download("ubuntu:22.04", "linux/arm64", saveDir)
 	download("ubuntu:22.04", "linux/amd64", saveDir)
 	download("registry.cn-hangzhou.aliyuncs.com/openbayes_common/cert-manager-controller:v1.15.1", "linux/amd64", saveDir)
-	load("ubuntu:22.04", "linux/amd64", saveDir)
+	load("docker", "ubuntu:22.04", "linux/amd64", saveDir)
 }

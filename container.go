@@ -8,6 +8,13 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
+type Runtime string
+
+const (
+	RunrimeDocker     Runtime = "docker"
+	RuntimeContainerd Runtime = "containerd"
+)
+
 var ErrNotImplemented error = fmt.Errorf("not implemented")
 
 type Container interface {
