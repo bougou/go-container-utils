@@ -49,10 +49,10 @@ func (dc *DockerContainer) GetInterfaces() ([]net.Interface, []netlink.Link, err
 
 	var interfaces = []net.Interface{}
 	var links = []netlink.Link{}
+
 	// "SandboxKey": "/var/run/docker/netns/5048a1a60e3b",
 	// symbolic link on node: /var/run -> /run
 	sandboxKey := newtorkContainer.NetworkSettings.SandboxKey
-
 	if strings.HasPrefix(sandboxKey, "/var/run") {
 		sandboxKey, _ = strings.CutPrefix(sandboxKey, "/var")
 	}

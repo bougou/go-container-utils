@@ -18,8 +18,17 @@ const (
 var ErrNotImplemented error = fmt.Errorf("not implemented")
 
 type Container interface {
+	// GetInterfaces returns the information of the interfaces and links of the container.
+	// The returned information is fetched on the host and based on the network namespace of the container,
+	// which means that these info can be seen as if it were fetched from inside the container.
 	GetInterfaces() ([]net.Interface, []netlink.Link, error)
+
+	// GetInterfacesNodeMapping returns the mapping of the interface name inside the container to
+	// its corresponding interface name on the host.
+	// eg:
+	// {"eth0":"cali97e0633f831"}
 	GetInterfacesNodeMapping() (map[string]string, error)
+
 	GetOverlayDirs() (lowerDir, upperDir, mergeDir string, err error)
 	IsExist() (bool, error)
 	IsOverlay() (bool, error)
