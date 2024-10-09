@@ -11,7 +11,7 @@ import (
 type Runtime string
 
 const (
-	RunrimeDocker     Runtime = "docker"
+	RuntimeDocker     Runtime = "docker"
 	RuntimeContainerd Runtime = "containerd"
 )
 
@@ -33,11 +33,11 @@ type Container interface {
 //   - docker://xxxxxx
 //   - containerd://xxxx
 func NewContainer(runtimeContainerID string) (Container, error) {
-	var runtime string
+	var runtime Runtime
 	var id string
 
 	if strings.HasPrefix(runtimeContainerID, "docker://") {
-		runtime = "docker"
+		runtime = RuntimeDocker
 		id = strings.TrimPrefix(runtimeContainerID, "docker://")
 
 	} else if strings.HasPrefix(runtimeContainerID, "containerd://") {
@@ -46,10 +46,10 @@ func NewContainer(runtimeContainerID string) (Container, error) {
 	}
 
 	switch runtime {
-	case "docker":
+	case RuntimeDocker:
 		return NewDockerContainer(id), nil
 
-	case "containerd":
+	case RuntimeContainerd:
 		return NewContainerdContainer(id), nil
 
 	default:
@@ -57,12 +57,12 @@ func NewContainer(runtimeContainerID string) (Container, error) {
 	}
 }
 
-func RuntimeRootDir(runtime string) (string, error) {
+func RuntimeRootDir(runtime Runtime) (string, error) {
 	switch runtime {
-	case "docker":
+	case RuntimeDocker:
 		return DockerRootDir()
 
-	case "containerd":
+	case RuntimeContainerd:
 		return ContainerdRootDir()
 
 	default:
