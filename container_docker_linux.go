@@ -7,8 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/containerd/containerd/pkg/netns"
-	"github.com/containernetworking/plugins/pkg/ns"
 	"github.com/vishvananda/netlink"
 )
 
@@ -32,7 +30,7 @@ func (dc *DockerContainer) GetInterfaces() ([]net.Interface, []netlink.Link, err
 
 	switch networkMode {
 	case "none", "host":
-		// for the pause container itself
+		// networkMode == "none", means the container is the pause container itself.
 		// networkMode == "host", means the container is run in host network mode.
 		networkContainerID = dc.ID
 
@@ -42,13 +40,12 @@ func (dc *DockerContainer) GetInterfaces() ([]net.Interface, []netlink.Link, err
 		networkContainerID, _ = strings.CutPrefix(string(networkMode), "container:")
 	}
 
+	// Get sandbox key file path from the network container.
+
 	newtorkContainer, err := cli.ContainerInspect(ctx, networkContainerID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("inspect docker network container (%s) failed, err: %s", networkContainerID, err)
 	}
-
-	var interfaces = []net.Interface{}
-	var links = []netlink.Link{}
 
 	// "SandboxKey": "/var/run/docker/netns/5048a1a60e3b",
 	// symbolic link on node: /var/run -> /run
@@ -58,28 +55,8 @@ func (dc *DockerContainer) GetInterfaces() ([]net.Interface, []netlink.Link, err
 	}
 
 	netnsPath := filepath.Join(dc.hostRoot, sandboxKey)
-	netNS := netns.LoadNetNS(netnsPath)
-	if err := netNS.Do(func(hostNs ns.NetNS) error {
-		intfs, err := net.Interfaces()
-		if err != nil {
-			return fmt.Errorf("get interfaces failed, err: %s", err)
-		}
 
-		for _, intf := range intfs {
-			link, err := netlink.LinkByName(intf.Name)
-			if err != nil {
-				return fmt.Errorf("link name for (%s) failed, err: %s", intf.Name, err)
-			}
-
-			links = append(links, link)
-			interfaces = append(interfaces, intf)
-		}
-		return nil
-	}); err != nil {
-		return nil, nil, fmt.Errorf("failed inside ns, err: %s", err)
-	}
-
-	return interfaces, links, nil
+	return GetInterfaces(netnsPath)
 }
 
 func (dc *DockerContainer) GetInterfacesNodeMapping() (map[string]string, error) {
@@ -88,17 +65,5 @@ func (dc *DockerContainer) GetInterfacesNodeMapping() (map[string]string, error)
 		return nil, fmt.Errorf("call GetInterfaces failed, err: %s", err)
 	}
 
-	var ret = map[string]string{}
-	for _, link := range links {
-		parentIndex := link.Attrs().ParentIndex
-		if parentIndex != 0 {
-			parentLink, err := netlink.LinkByIndex(link.Attrs().ParentIndex)
-			if err != nil {
-				return nil, fmt.Errorf("call LinkByIndex failed, err: %s", err)
-			}
-			ret[link.Attrs().Name] = parentLink.Attrs().Name
-		}
-	}
-
-	return ret, nil
+	return GetInterfacesNodeMapping(links)
 }

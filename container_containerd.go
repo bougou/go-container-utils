@@ -3,7 +3,6 @@ package container
 import (
 	"context"
 	"fmt"
-	"net"
 	"os"
 	"strings"
 
@@ -11,7 +10,6 @@ import (
 	"github.com/containerd/containerd/defaults"
 	"github.com/containerd/containerd/namespaces"
 	"github.com/containerd/errdefs"
-	"github.com/vishvananda/netlink"
 )
 
 type ContainerdContainer struct {
@@ -44,14 +42,6 @@ func ContainerdRootDir() (string, error) {
 	defer cli.Close()
 
 	return defaults.DefaultRootDir, nil
-}
-
-func (dc *ContainerdContainer) GetInterfaces() ([]net.Interface, []netlink.Link, error) {
-	return nil, nil, ErrNotImplemented
-}
-
-func (dc *ContainerdContainer) GetInterfacesNodeMapping() (map[string]string, error) {
-	return nil, ErrNotImplemented
 }
 
 func (cc *ContainerdContainer) GetOverlayDirs() (lowerDir, upperDir, mergedDir string, err error) {
@@ -229,8 +219,8 @@ func (cc *ContainerdContainer) Unpause() error {
 	return nil
 }
 
-func (dc *ContainerdContainer) WithHostRoot(hostRoot string) {
-	dc.hostRoot = hostRoot
+func (cc *ContainerdContainer) WithHostRoot(hostRoot string) {
+	cc.hostRoot = hostRoot
 }
 
 func (cc *ContainerdContainer) getRootFS() (string, error) {

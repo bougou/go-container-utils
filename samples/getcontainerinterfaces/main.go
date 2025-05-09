@@ -30,19 +30,15 @@ func main() {
 		panic(fmt.Errorf("get interfaces failed, err: %s", err))
 	}
 
-	fmt.Printf("got %d interfaces, %d links", len(intfs), len(links))
-	pretty.Println(intfs)
-	pretty.Println(links)
-
-	for _, intf := range intfs {
-		fmt.Println(intf.Name)
-	}
+	fmt.Printf("got %d interfaces, %d links\n", len(intfs), len(links))
+	pretty.Println("interfaces: ", intfs)
+	pretty.Println("links: ", links)
 
 	m, err := container.GetInterfacesNodeMapping()
 	if err != nil {
 		panic(fmt.Errorf("get interfaces node mapping failed, err: %s", err))
 	}
-	pretty.Println(m)
+	pretty.Println("interfacemapping: ", m)
 
 	for containerInterface, nodeInterface := range m {
 		link, err := netlink.LinkByName(nodeInterface)
