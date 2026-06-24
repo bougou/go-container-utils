@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	ctutils "github.com/bougou/go-container-utils"
+	"github.com/bougou/go-container-utils/pkg/container"
 	"github.com/kr/pretty"
 	"github.com/vishvananda/netlink"
 )
@@ -20,7 +20,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	container, err := ctutils.NewContainer(containerID)
+	container, err := container.NewContainer(containerID)
 	if err != nil {
 		panic(fmt.Errorf("load container failed, err: %s", err))
 	}

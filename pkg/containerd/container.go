@@ -1,4 +1,4 @@
-package container
+package containerd
 
 import (
 	"context"
@@ -16,8 +16,6 @@ type ContainerdContainer struct {
 	ID       string
 	hostRoot string
 }
-
-var _ Container = (*ContainerdContainer)(nil)
 
 func NewContainerdContainer(containerID string) *ContainerdContainer {
 	return &ContainerdContainer{

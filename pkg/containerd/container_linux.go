@@ -1,4 +1,4 @@
-package container
+package containerd
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"net"
 	"path/filepath"
 
+	"github.com/bougou/go-container-utils/pkg/utils"
 	"github.com/containerd/containerd/namespaces"
 	"github.com/vishvananda/netlink"
 )
@@ -33,7 +34,7 @@ func (cc *ContainerdContainer) GetInterfaces() ([]net.Interface, []netlink.Link,
 	netnsPath := fmt.Sprintf("/proc/%d/ns/net", pid)
 	netnsPath = filepath.Join(cc.hostRoot, netnsPath)
 
-	return GetInterfaces(netnsPath)
+	return utils.GetInterfaces(netnsPath)
 }
 
 func (cc *ContainerdContainer) GetInterfacesNodeMapping() (map[string]string, error) {
@@ -42,5 +43,5 @@ func (cc *ContainerdContainer) GetInterfacesNodeMapping() (map[string]string, er
 		return nil, fmt.Errorf("call GetInterfaces failed, err: %s", err)
 	}
 
-	return GetInterfacesNodeMapping(links)
+	return utils.GetInterfacesNodeMapping(links)
 }

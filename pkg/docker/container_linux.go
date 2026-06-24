@@ -1,4 +1,4 @@
-package container
+package docker
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/bougou/go-container-utils/pkg/utils"
 	"github.com/vishvananda/netlink"
 )
 
@@ -56,7 +57,7 @@ func (dc *DockerContainer) GetInterfaces() ([]net.Interface, []netlink.Link, err
 
 	netnsPath := filepath.Join(dc.hostRoot, sandboxKey)
 
-	return GetInterfaces(netnsPath)
+	return utils.GetInterfaces(netnsPath)
 }
 
 func (dc *DockerContainer) GetInterfacesNodeMapping() (map[string]string, error) {
@@ -65,5 +66,5 @@ func (dc *DockerContainer) GetInterfacesNodeMapping() (map[string]string, error)
 		return nil, fmt.Errorf("call GetInterfaces failed, err: %s", err)
 	}
 
-	return GetInterfacesNodeMapping(links)
+	return utils.GetInterfacesNodeMapping(links)
 }

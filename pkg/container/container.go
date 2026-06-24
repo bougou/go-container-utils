@@ -5,21 +5,10 @@ import (
 	"net"
 	"strings"
 
+	"github.com/bougou/go-container-utils/pkg/containerd"
+	"github.com/bougou/go-container-utils/pkg/docker"
 	"github.com/vishvananda/netlink"
 )
-
-// Runtime represents the type of container runtime being used
-type Runtime string
-
-const (
-	// RuntimeDocker represents the Docker container runtime
-	RuntimeDocker Runtime = "docker"
-	// RuntimeContainerd represents the Containerd container runtime
-	RuntimeContainerd Runtime = "containerd"
-)
-
-// ErrNotImplemented is returned when a requested operation is not implemented
-var ErrNotImplemented error = fmt.Errorf("not implemented")
 
 // Container defines the interface for container operations.
 // It provides methods to interact with and retrieve information about containers
@@ -61,6 +50,19 @@ type Container interface {
 	WithHostRoot(hostRoot string)
 }
 
+var _ Container = (*containerd.ContainerdContainer)(nil)
+var _ Container = (*docker.DockerContainer)(nil)
+
+// Runtime represents the type of container runtime being used
+type Runtime string
+
+const (
+	// RuntimeDocker represents the Docker container runtime
+	RuntimeDocker Runtime = "docker"
+	// RuntimeContainerd represents the Containerd container runtime
+	RuntimeContainerd Runtime = "containerd"
+)
+
 // NewContainer creates a new Container instance based on the provided runtime container ID.
 // The runtimeContainerID should be in one of these formats:
 //   - docker://<container-id>
@@ -74,16 +76,16 @@ func NewContainer(runtimeContainerID string) (Container, error) {
 		id = strings.TrimPrefix(runtimeContainerID, "docker://")
 
 	} else if strings.HasPrefix(runtimeContainerID, "containerd://") {
-		runtime = "containerd"
+		runtime = RuntimeContainerd
 		id = strings.TrimPrefix(runtimeContainerID, "containerd://")
 	}
 
 	switch runtime {
 	case RuntimeDocker:
-		return NewDockerContainer(id), nil
+		return docker.NewDockerContainer(id), nil
 
 	case RuntimeContainerd:
-		return NewContainerdContainer(id), nil
+		return containerd.NewContainerdContainer(id), nil
 
 	default:
 		return nil, fmt.Errorf("unknown container runtime: (%s)", runtime)
@@ -95,10 +97,10 @@ func NewContainer(runtimeContainerID string) (Container, error) {
 func RuntimeRootDir(runtime Runtime) (string, error) {
 	switch runtime {
 	case RuntimeDocker:
-		return DockerRootDir()
+		return docker.DockerRootDir()
 
 	case RuntimeContainerd:
-		return ContainerdRootDir()
+		return containerd.ContainerdRootDir()
 
 	default:
 		return "", fmt.Errorf("unknown container runtime: (%s)", runtime)

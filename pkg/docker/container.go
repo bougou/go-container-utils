@@ -1,4 +1,4 @@
-package container
+package docker
 
 import (
 	"context"
@@ -16,7 +16,6 @@ type DockerContainer struct {
 	hostRoot string
 }
 
-var _ Container = (*DockerContainer)(nil)
 
 func NewDockerContainer(containerID string) *DockerContainer {
 	return &DockerContainer{
